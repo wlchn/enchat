@@ -9,7 +9,18 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.Data["Website"] = "wanglei.io"
-	c.Data["Email"] = "geekwanglei@gmail.com"
-	c.TplName = "index.tpl"
+	c.TplName = "welcome.html"
+}
+
+func (c *MainController) Join() {
+	email := c.GetString("email")
+
+	if len(email) == 0 {
+		c.Redirect("/", 302)
+		return
+	}
+
+	c.Redirect("/socket?email="+email, 302)
+
+	return
 }
