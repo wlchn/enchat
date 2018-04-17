@@ -9,11 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Subscription struct {
-	Archive []models.Event
-	New     <-chan models.Event
-}
-
 func newEvent(ep models.EventType, user, msg string) models.Event {
 	return models.Event{ep, user, int(time.Now().Unix()), msg}
 }
@@ -38,8 +33,7 @@ var (
 	unsubscribe = make(chan string, 10)
 	// Send events here to publish them.
 	publish = make(chan models.Event, 10)
-	// Long polling waiting list.
-	waitingList = list.New()
+
 	subscribers = list.New()
 )
 
@@ -57,13 +51,9 @@ func chatroom() {
 				beego.Info("Old user:", sub.Name, ";WebSocket:", sub.Conn != nil)
 			}
 		case event := <-publish:
-			// Notify waiting list.
-			for ch := waitingList.Back(); ch != nil; ch = ch.Prev() {
-				ch.Value.(chan bool) <- true
-				waitingList.Remove(ch)
-			}
 
 			broadcastWebSocket(event)
+			// sendMsg(event, "robot")
 			models.NewArchive(event)
 
 			if event.Type == models.EVENT_MESSAGE {

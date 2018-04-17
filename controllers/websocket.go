@@ -79,3 +79,25 @@ func broadcastWebSocket(event models.Event) {
 		}
 	}
 }
+
+// broadcastWebSocket broadcasts messages to WebSocket users.
+func sendMsg(event models.Event, toUserEmail string) {
+	data, err := json.Marshal(event)
+	if err != nil {
+		beego.Error("Fail to marshal event:", err)
+		return
+	}
+
+	for sub := subscribers.Front(); sub != nil; sub = sub.Next() {
+		// Immediately send event to WebSocket users.
+		ws := sub.Value.(Subscriber).Conn
+		if sub.Value.(Subscriber).Name == toUserEmail {
+			if ws != nil {
+				if ws.WriteMessage(websocket.TextMessage, data) != nil {
+					// User disconnected.
+					unsubscribe <- sub.Value.(Subscriber).Name
+				}
+			}
+		}
+	}
+}
